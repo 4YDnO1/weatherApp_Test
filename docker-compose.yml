@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: weatherapp_db
+    environment:
+      POSTGRES_DB: weather
+      POSTGRES_USER: weather
+      POSTGRES_PASSWORD: weather
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather -d weather"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: weatherapp_backend
+    env_file:
+      - ./backend/.env.docker
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: weather
+      DB_USERNAME: weather
+      DB_PASSWORD: weather
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+    # No bind mount to avoid overwriting generated app files
+    # volumes:
+    #   - ./backend:/var/www/html
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: weatherapp_frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api
+    # No bind mount to avoid overwriting generated app files
+    # volumes:
+    #   - ./frontend:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  db_data: {} 
