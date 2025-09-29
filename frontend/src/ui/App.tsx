@@ -7,6 +7,8 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api
 type Reading = {
   id: number
   observed_at: string
+  lat?: number | null
+  lon?: number | null
   temperature_c: number | null
   wind_speed_ms: number | null
   pressure_hpa: number | null
@@ -18,6 +20,8 @@ function formatDate(date: Date) {
 }
 
 export function App() {
+  const [lat, setLat] = useState<string>('55.7558')
+  const [lon, setLon] = useState<string>('37.6173')
   const [last, setLast] = useState<Reading | null>(null)
   const [recent, setRecent] = useState<Reading[]>([])
   const [from, setFrom] = useState<string>(formatDate(new Date(Date.now() - 7 * 86400000)))
@@ -26,24 +30,26 @@ export function App() {
 
   // First load: last
   useEffect(() => {
-    axios.get(`${API_BASE}/weather/last`).then(r => setLast(r.data)).catch(() => {})
-  }, [])
+    axios.get(`${API_BASE}/weather/last`, { params: { lat, lon }})
+      .then(r => setLast(r.data))
+      .catch(() => {})
+  }, [lat, lon])
 
   // Async load: 50 recent
   useEffect(() => {
-    axios.get(`${API_BASE}/weather/recent`, { params: { limit: 50 }})
+    axios.get(`${API_BASE}/weather/recent`, { params: { limit: 50, lat, lon }})
       .then(r => setRecent(r.data))
       .catch(() => {})
-  }, [])
+  }, [lat, lon])
 
-  // Load range when dates change
+  // Load range when dates or location change
   useEffect(() => {
     const controller = new AbortController()
-    axios.get(`${API_BASE}/weather/range`, { params: { from, to }, signal: controller.signal })
+    axios.get(`${API_BASE}/weather/range`, { params: { from, to, lat, lon }, signal: controller.signal })
       .then(r => setRangeData(r.data))
       .catch(() => {})
     return () => controller.abort()
-  }, [from, to])
+  }, [from, to, lat, lon])
 
   const chartData = useMemo(() => {
     const data = rangeData && rangeData.length > 0 ? rangeData : recent
@@ -55,9 +61,31 @@ export function App() {
     }))
   }, [rangeData, recent])
 
+  const triggerFetch = async () => {
+    try {
+      await axios.post(`${API_BASE}/weather/fetch`, null, { params: { lat, lon }})
+      // poll last after small delay
+      setTimeout(() => {
+        axios.get(`${API_BASE}/weather/last`, { params: { lat, lon }}).then(r => setLast(r.data)).catch(() => {})
+        axios.get(`${API_BASE}/weather/recent`, { params: { limit: 50, lat, lon }}).then(r => setRecent(r.data)).catch(() => {})
+      }, 1500)
+    } catch {}
+  }
+
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16, fontFamily: 'system-ui, Arial' }}>
       <h2>Weather</h2>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+        <label>
+          Lat: <input type="number" step="0.0001" value={lat} onChange={e => setLat(e.target.value)} style={{ width: 120 }} />
+        </label>
+        <label>
+          Lon: <input type="number" step="0.0001" value={lon} onChange={e => setLon(e.target.value)} style={{ width: 120 }} />
+        </label>
+        <button onClick={triggerFetch}>Fetch now</button>
+      </div>
+
       {last ? (
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
           <div><strong>Observed:</strong> {new Date(last.observed_at).toLocaleString()}</div>
@@ -72,7 +100,7 @@ export function App() {
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
         <label>
-          From: <input type="date" value={from} onChange={e => setFrom(e.target.value)} />
+          From: <input type="date" value={from} onChange ={e => setFrom(e.target.value)} />
         </label>
         <label>
           To: <input type="date" value={to} onChange={e => setTo(e.target.value)} />

@@ -2,38 +2,101 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WeatherReading;
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\JsonResponse;
+
+use App\Models\Weather;
+use App\Http\Requests\WeatherGetRequest;
+use App\Jobs\FetchWeatherJob;
 
 class WeatherController extends Controller
 {
-    public function last(): JsonResource
+    public function getLast(WeatherGetRequest $request): JsonResponse
     {
-        $reading = WeatherReading::orderByDesc('observed_at')->first();
-        return JsonResource::make($reading);
+        $validatedData = $request->validated();
+
+
+        $weatherQuery = Weather::query();
+        $weatherQuery->where('lat',  $lat)->where('lon', $lon);
+        $weatherData = $weatherQuery->orderByDesc('observed_at')->first();
+
+        return response()->json( $weatherData);
     }
 
-    public function recent(Request $request): JsonResource
+    public function getRecent(WeatherGetRequest $request): JsonResponse
     {
-        $limit = (int) $request->query('limit', 50);
-        $limit = max(1, min($limit, 1000));
-        $items = WeatherReading::orderByDesc('observed_at')->limit($limit)->get();
-        return JsonResource::make($items);
+        $validatedData = $request->validated();
+        
+        $weatherQuery = $this->getWeatherDataBuilder($validatedData);
+
+        $weatherData = $this->fetch($validatedData);
+        $limit = 50;
+
+        $weatherQuery = Weather::query();
+        $weatherQuery->where('lat', $lat)->where('lon', $lon);
+        $weatherData = $weatherQuery->orderByDesc('observed_at')->limit($limit)->get();
+        
+        return response()->json( $weatherData);
     }
 
-    public function range(Request $request): JsonResource
+    public function getRange(WeatherGetRequest $request): JsonResponse
     {
-        $request->validate([
-            'from' => ['required', 'date'],
-            'to' => ['required', 'date', 'after_or_equal:from'],
-        ]);
-        $from = Carbon::parse($request->query('from'))->startOfDay();
-        $to = Carbon::parse($request->query('to'))->endOfDay();
-        $items = WeatherReading::whereBetween('observed_at', [$from, $to])
-            ->orderBy('observed_at')
-            ->get();
-        return JsonResource::make($items);
+        $validatedData = $request->validated();
+
+        $from = Carbon::parse($validatedData['from'])->startOfDay();
+        $to = Carbon::parse($validatedData['to'])->endOfDay();
+
+        $weatherQuery = $this->getWeatherDataBuilder($validatedData);
+        $weatherQuery = $weatherQuery::whereBetween('observed_at', [$from, $to]);
+
+        if ($weatherData = $weatherQuery->get()) {
+
+        }
+
+        $weatherData = $weatherQuery->orderBy('observed_at')->get();
+        return response()->json( $weatherData);
+    }
+
+    public function fetch(array $validatedData): JsonResponse
+    {
+        $weatherQuery = $this->getWeatherDataBuilder($validatedData);
+        $Minutes15Ago = Carbon::now()->subMinutes(15);
+        $wheatherCurrentData = $weatherQuery->where("observed_at", ">", $Minutes15Ago)->first();
+        
+        $newLastDataAvalaibale = true;
+        if ($wheatherCurrentData) {
+            $newLastDataAvalaibale = false;
+        }
+
+
+        if ($WeatherLocationData) { 
+            $WeatherData = Weather::query()
+            ->where('lat', $WeatherLocationData['lat'])
+            ->where('lon', $WeatherLocationData['lon']);
+        }
+
+        // https://api.open-meteo.com/v1/forecast?latitude=54.9044&longitude=52.3154
+        Weather::where('searched_lat', $lat)
+            ->where('searched_lon', $lon);
+
+        dispatch(new FetchWeatherJob($lat, $lon, $ftom, $to));
+        return response()->json( ['status' => 'queued']);
+    }
+
+    /**
+     * Helper function to build the base Weather query with lat/lon filters.
+     *
+     * @param WeatherGetRequest $request
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function getWeatherDataBuilder($validatedData) 
+    {
+        $coordinateStep = 0.0625;
+        $lat = (float) round($validatedData['lat'] / $coordinateStep) * $coordinateStep;
+        $lon = (float) round($validatedData['lon'] / $coordinateStep) * $coordinateStep;
+
+        return Weather::query()
+            ->where('lat', $lat)
+            ->where('lon', $lon);
     }
 } 

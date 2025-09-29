@@ -7,9 +7,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('weather_readings', function (Blueprint $table) {
+        Schema::create('weather', function (Blueprint $table) {
             $table->id();
             $table->timestamp('observed_at')->index();
+            $table->decimal('lat', 8, 5)->nullable()->index();
+            $table->decimal('lon', 8, 5)->nullable()->index();
             $table->float('temperature_c')->nullable();
             $table->float('wind_speed_ms')->nullable();
             $table->float('pressure_hpa')->nullable();
@@ -22,6 +24,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('weather_readings');
+        Schema::dropIfExists('weather');
     }
 }; 

@@ -25,7 +25,6 @@ backend/storage/*.log
 backend/storage/framework/*
 backend/storage/logs/*
 backend/.env
-backend/.env.*
 
 # Composer
 composer.lock
@@ -40,7 +39,7 @@ backend/composer.lock
 **/.docker/*
 .docker/
 .env
-.env.*
+.env.docker
 
 # Misc
 coverage/

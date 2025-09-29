@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class WeatherReading extends Model
+class Weather extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'observed_at',
+        'lat',
+        'lon',
         'temperature_c',
         'wind_speed_ms',
         'pressure_hpa',
@@ -21,6 +20,8 @@ class WeatherReading extends Model
 
     protected $casts = [
         'observed_at' => 'datetime',
+        'lat' => 'float',
+        'lon' => 'float',
         'raw' => 'array',
     ];
 } 

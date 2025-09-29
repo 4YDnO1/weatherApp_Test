@@ -23,9 +23,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: weatherapp_backend
-    env_file:
-      - ./backend/.env.docker
     environment:
+      DB_CONNECTION: pgsql
       DB_HOST: db
       DB_PORT: 5432
       DB_DATABASE: weather
