@@ -15,7 +15,7 @@ class FetchWeather extends Command
         $lat = $this->option('lat') ?? env('WEATHER_LAT', '55.7558');
         $lon = $this->option('lon') ?? env('WEATHER_LON', '37.6173');
 
-        dispatch(new FetchWeatherJob((float) $lat, (float) $lon));
+        // dispatch(new FetchWeatherJob((float) $lat, (float) $lon));
         $this->info("Weather fetch queued for lat={$lat}, lon={$lon}");
 
         return self::SUCCESS;

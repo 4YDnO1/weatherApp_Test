@@ -58,18 +58,17 @@ export function App() {
       temperature: d.temperature_c,
       pressure: d.pressure_hpa,
       wind: d.wind_speed_ms,
+      humidity: d.humidity_pct,
     }))
   }, [rangeData, recent])
 
   const triggerFetch = async () => {
     try {
-      await axios.post(`${API_BASE}/weather/fetch`, null, { params: { lat, lon }})
-      // poll last after small delay
-      setTimeout(() => {
         axios.get(`${API_BASE}/weather/last`, { params: { lat, lon }}).then(r => setLast(r.data)).catch(() => {})
         axios.get(`${API_BASE}/weather/recent`, { params: { limit: 50, lat, lon }}).then(r => setRecent(r.data)).catch(() => {})
-      }, 1500)
-    } catch {}
+    } catch {
+
+    }
   }
 
   return (
@@ -85,12 +84,11 @@ export function App() {
         </label>
         <button onClick={triggerFetch}>Fetch now</button>
       </div>
-
       {last ? (
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
           <div><strong>Observed:</strong> {new Date(last.observed_at).toLocaleString()}</div>
           <div><strong>Temp:</strong> {last.temperature_c ?? '—'} °C</div>
-          <div><strong>Wind:</strong> {last.wind_speed_ms ? last.wind_speed_ms.toFixed(2) : '—'} m/s</div>
+          <div><strong>Wind:</strong> {last.wind_speed_ms ?  last.wind_speed_ms : '—'} m/s</div>
           <div><strong>Pressure:</strong> {last.pressure_hpa ?? '—'} hPa</div>
           <div><strong>Humidity:</strong> {last.humidity_pct ?? '—'} %</div>
         </div>
@@ -112,12 +110,13 @@ export function App() {
           <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" minTickGap={32} />
-            <YAxis yAxisId="left" orientation="left" label={{ value: '°C', angle: -90, position: 'insideLeft' }} />
-            <YAxis yAxisId="right" orientation="right" label={{ value: 'hPa / m/s', angle: 90, position: 'insideRight' }} />
+            <YAxis yAxisId="left" orientation="left" label={{ value: ' % / m/s / °C', angle: -90, position: 'insideLeft' }} />
+            <YAxis yAxisId="right" orientation="right" color='#3498db' label={{ value: 'hPa', angle: 90, position: 'insideRight' }} />
             <Tooltip />
             <Line yAxisId="left" type="monotone" dataKey="temperature" stroke="#e74c3c" dot={false} name="Temperature" />
             <Line yAxisId="right" type="monotone" dataKey="pressure" stroke="#3498db" dot={false} name="Pressure" />
-            <Line yAxisId="right" type="monotone" dataKey="wind" stroke="#2ecc71" dot={false} name="Wind" />
+            <Line yAxisId="left" type="monotone" dataKey="wind" stroke="#2ecc71" dot={false} name="Wind" />
+            <Line yAxisId="right" type="monotone" dataKey="humidity" stroke="#FFC0CB" dot={false} name="Humidity" />
           </LineChart>
         </ResponsiveContainer>
       </div>

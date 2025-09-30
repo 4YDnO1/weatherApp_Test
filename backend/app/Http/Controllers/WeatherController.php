@@ -7,7 +7,8 @@ use Illuminate\Http\JsonResponse;
 
 use App\Models\Weather;
 use App\Http\Requests\WeatherGetRequest;
-use App\Jobs\FetchWeatherJob;
+use App\Http\Requests\WeatherGetRangeRequest;
+use App\Jobs\WeatherFetchJob;
 
 class WeatherController extends Controller
 {
@@ -15,10 +16,13 @@ class WeatherController extends Controller
     {
         $validatedData = $request->validated();
 
+        $this->fetch($validatedData);
 
-        $weatherQuery = Weather::query();
-        $weatherQuery->where('lat',  $lat)->where('lon', $lon);
-        $weatherData = $weatherQuery->orderByDesc('observed_at')->first();
+        $weatherQuery = $this->getWeatherDataBuilder($validatedData);
+        $weatherData = $weatherQuery
+            ->where('observed_at', '<', Carbon::now())
+            ->orderByDesc('observed_at')
+            ->first();
 
         return response()->json( $weatherData);
     }
@@ -26,61 +30,83 @@ class WeatherController extends Controller
     public function getRecent(WeatherGetRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
+        $validatedData['from'] = now()->subDays(3)->startOfDay();
+        $validatedData['to'] = now()->addDay()->endOfDay();
         
-        $weatherQuery = $this->getWeatherDataBuilder($validatedData);
+        $result = $this->fetch($validatedData);
 
-        $weatherData = $this->fetch($validatedData);
         $limit = 50;
+        $weatherQuery = $this->getWeatherDataBuilder($validatedData);
+        $weatherData = $weatherQuery
+            ->where('observed_at',  '<', now()->endOfDay())
+            ->orderByDesc('observed_at')
+            ->limit($limit)
+            ->get();
 
-        $weatherQuery = Weather::query();
-        $weatherQuery->where('lat', $lat)->where('lon', $lon);
-        $weatherData = $weatherQuery->orderByDesc('observed_at')->limit($limit)->get();
-        
         return response()->json( $weatherData);
     }
 
-    public function getRange(WeatherGetRequest $request): JsonResponse
+    public function getRange(WeatherGetRangeRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
+
+        $this->fetch($validatedData);
 
         $from = Carbon::parse($validatedData['from'])->startOfDay();
         $to = Carbon::parse($validatedData['to'])->endOfDay();
 
         $weatherQuery = $this->getWeatherDataBuilder($validatedData);
-        $weatherQuery = $weatherQuery::whereBetween('observed_at', [$from, $to]);
-
-        if ($weatherData = $weatherQuery->get()) {
-
-        }
-
-        $weatherData = $weatherQuery->orderBy('observed_at')->get();
+        $weatherData = $weatherQuery
+            ->whereBetween('observed_at',  [$from, $to])
+            ->orderByDesc('observed_at')
+            ->get();
         return response()->json( $weatherData);
     }
 
-    public function fetch(array $validatedData): JsonResponse
+    // fetch new data if there missing in database
+    // 1) no data for last 15 mins or
+    // 2) not enough data for range
+    public function fetch(array $searchedData): JsonResponse
     {
-        $weatherQuery = $this->getWeatherDataBuilder($validatedData);
+        $weatherQuery = $this->getWeatherDataBuilder($searchedData);
         $Minutes15Ago = Carbon::now()->subMinutes(15);
-        $wheatherCurrentData = $weatherQuery->where("observed_at", ">", $Minutes15Ago)->first();
+        $wheatherCurrentDate = $weatherQuery
+            ->whereBetween('observed_at', [$Minutes15Ago, Carbon::now()])
+            ->first('observed_at');
+
+        $newLastDataAvalaibale = !isset($wheatherCurrentDate['observed_at']);
+
+        $from = isset($searchedData['from']) ?
+            Carbon::parse($searchedData['from'])->startOfDay():
+            Carbon::now()->startOfDay();
+        $to = isset($searchedData['to']) ?
+            Carbon::parse($searchedData['to'])->endOfDay() :
+            Carbon::now()->endOfDay();
         
-        $newLastDataAvalaibale = true;
-        if ($wheatherCurrentData) {
-            $newLastDataAvalaibale = false;
+            
+        $weatherQuery2 = $this->getWeatherDataBuilder($searchedData);
+        $weatherHoursDates = $weatherQuery2
+            ->whereBetween('observed_at', [$from, $to])
+            ->get('observed_at')
+            ->map(function ($weather) {
+                $observedAt = Carbon::parse($weather['observed_at']);
+                if ($observedAt->minute === 0) return $observedAt;
+                return null;
+            })
+            ->filter();
+
+        $newHoursDataNeeded = count($weatherHoursDates) < 24 * ($from->diffInDays($to) + 1);
+        // dd($from, $to, $searchedData, count($weatherHoursDates), $from->diffInDays($to) + 1, $weatherHoursDates->toArray());
+        if ($newLastDataAvalaibale || $newHoursDataNeeded) {
+            $coordinateStep = 0.0625;
+            $lat = (float) round($searchedData['lat'] / $coordinateStep) * $coordinateStep;
+            $lon = (float) round($searchedData['lon'] / $coordinateStep) * $coordinateStep;
+    
+            dispatch(new WeatherFetchJob($lat, $lon, $from, $to, $newLastDataAvalaibale, $weatherHoursDates->toArray()));
+            return response()->json( ['status' => 'queued']);
         }
 
-
-        if ($WeatherLocationData) { 
-            $WeatherData = Weather::query()
-            ->where('lat', $WeatherLocationData['lat'])
-            ->where('lon', $WeatherLocationData['lon']);
-        }
-
-        // https://api.open-meteo.com/v1/forecast?latitude=54.9044&longitude=52.3154
-        Weather::where('searched_lat', $lat)
-            ->where('searched_lon', $lon);
-
-        dispatch(new FetchWeatherJob($lat, $lon, $ftom, $to));
-        return response()->json( ['status' => 'queued']);
+        return response()->json( ['status' => 'noFetchNeeded']);
     }
 
     /**
@@ -94,7 +120,6 @@ class WeatherController extends Controller
         $coordinateStep = 0.0625;
         $lat = (float) round($validatedData['lat'] / $coordinateStep) * $coordinateStep;
         $lon = (float) round($validatedData['lon'] / $coordinateStep) * $coordinateStep;
-
         return Weather::query()
             ->where('lat', $lat)
             ->where('lon', $lon);
