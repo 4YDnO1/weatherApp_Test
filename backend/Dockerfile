@@ -1,8 +1,8 @@
-FROM php:8.3-fpm-alpine AS base
+FROM php:8.3-fpm-alpine AS php
 
 # System deps
 RUN apk add --no-cache \
-	bash libzip-dev oniguruma-dev postgresql-dev git unzip curl supervisor icu-dev libxml2-dev
+	bash libzip-dev oniguruma-dev postgresql-dev git unzip curl icu-dev libxml2-dev
 	
 # PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql mbstring zip intl xml 

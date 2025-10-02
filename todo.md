@@ -1,6 +1,4 @@
 
-
--- Подумать о джоберрах, нужны ли они
-
--- geolocation by browser
+-- do i need jubs for this?
+-- do geolocation by browser
 

@@ -3,7 +3,7 @@
 Dockerized test app for viewing weather readings.
 
 ## Stack
-- Backend: Laravel 10 (PHP 8.2), PostgreSQL
+- Backend: Laravel 10 (PHP 8.3-fpm), PostgreSQL
 - Frontend: React + Vite + TypeScript + Recharts
 
 ## Prerequisites
@@ -20,16 +20,18 @@ docker compose build
 docker compose up -d
 
 # Open
-# Frontend: http://localhost:5173
-# API:      http://localhost:8000/api
+# Frontend: http://localhost:80
+# API:      http://localhost:80/api
 ```
 
 ## API
+\ !For all endpoints also need provide latitude (?lat=) and longitude (?lon=) 
 - GET `/api/weather/last` — last closest
-- GET `/api/weather/recent` — 50 recent weather marks (hours)
+- GET `/api/weather/recent` — 50 recent weather marks (by hours up to end of day)
 - GET `/api/weather/range?from=YYYY-MM-DD&to=YYYY-MM-DD` — by date range
-Also need provide latitude (?lat=) and longitude (?lon=)
 
+
+<!-- 
 ## GitHub (private)
 ```bash
 # Initialize repo
@@ -45,4 +47,4 @@ gh repo create <your-org-or-user>/<repo-name> --private --source=. --remote=orig
 # git remote add origin git@github.com:<user>/<repo>.git
 # git branch -M main
 # git push -u origin main
-``` 
+```  -->
