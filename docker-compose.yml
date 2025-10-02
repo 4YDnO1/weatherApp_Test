@@ -1,61 +1,81 @@
 version: "3.9"
 
 services:
-  db:
+  weather_database:
     image: postgres:15-alpine
-    container_name: weatherapp_db
+    container_name: weather_database
+    restart: unless-stopped
+    # ports:
+    #   - "5432:5432"
     environment:
-      POSTGRES_DB: weather
-      POSTGRES_USER: weather
-      POSTGRES_PASSWORD: weather
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - pg_database_data:/var/lib/postgresql/data
+    networks:
+      - weather-database-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U weather -d weather"]
       interval: 5s
       timeout: 3s
       retries: 20
 
-  backend:
+  weather_backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: weatherapp_backend
+    container_name: weather_backend
     environment:
       DB_CONNECTION: pgsql
-      DB_HOST: db
+      DB_HOST: weather_database
       DB_PORT: 5432
-      DB_DATABASE: weather
-      DB_USERNAME: weather
-      DB_PASSWORD: weather
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       APP_ENV: local
       APP_DEBUG: "true"
-      APP_URL: http://localhost:8000
-    # No bind mount to avoid overwriting generated app files
+      APP_URL: http://localhost:9000
     # volumes:
-    #   - ./backend:/var/www/html
-    ports:
-      - "8000:8000"
+    #   - ./backend:/app/weather_backend
+    networks:
+      - weather-database-network
+      - weather-app-network
+      - weather-host-network
+    # ports:
+    #   - "9000:9000"
     depends_on:
-      db:
+      weather_database:
         condition: service_healthy
 
-  frontend:
+  weather_frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: weatherapp_frontend
-    environment:
-      VITE_API_BASE_URL: http://localhost:8000/api
-    # No bind mount to avoid overwriting generated app files
-    # volumes:
-    #   - ./frontend:/app
+    container_name: weather_frontend
     ports:
-      - "5173:5173"
+      - "80:80"
+    environment:
+      VITE_API_BASE_URL: /api
+    # volumes:
+    #   - ./frontend:/app/weather_frontend
+    networks:
+      - weather-app-network
+      - weather-host-network
     depends_on:
-      - backend
+      - weather_backend
+
+
+networks:
+  weather-host-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
+  weather-app-network:  
+    internal: true
+  weather-database-network:  
+    internal: true
 
 volumes:
-  db_data: {} 
+  pg_database_data:
+    driver: local

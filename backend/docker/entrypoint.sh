@@ -17,6 +17,8 @@ if [ -n "${DB_DATABASE:-}" ]; then sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_DA
 if [ -n "${DB_USERNAME:-}" ]; then sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${DB_USERNAME}/" .env || true; fi
 if [ -n "${DB_PASSWORD:-}" ]; then sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASSWORD}/" .env || true; fi
 
+php artisan optimize:clear
+
 php artisan key:generate --force || true
 php artisan config:clear || true
 
@@ -33,4 +35,10 @@ php artisan migrate --force
 # Start scheduler as well (no harm if no tasks)
 (php artisan schedule:work &) >/dev/null 2>&1 || true
 
-php artisan serve --host=0.0.0.0 --port=8000 
+chmod -R 777 storage bootstrap/cache
+mkdir -p storage/logs
+touch storage/logs/laravel.log
+chmod 666 storage/logs/laravel.log
+
+php-fpm
+# php artisan serve --host=0.0.0.0 --port=8000 

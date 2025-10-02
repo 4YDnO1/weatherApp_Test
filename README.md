@@ -25,9 +25,10 @@ docker compose up -d
 ```
 
 ## API
-- GET `/api/weather/last` — last reading
-- GET `/api/weather/recent?limit=50` — N recent
+- GET `/api/weather/last` — last closest
+- GET `/api/weather/recent` — 50 recent weather marks (hours)
 - GET `/api/weather/range?from=YYYY-MM-DD&to=YYYY-MM-DD` — by date range
+Also need provide latitude (?lat=) and longitude (?lon=)
 
 ## GitHub (private)
 ```bash
