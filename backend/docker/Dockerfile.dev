@@ -1,0 +1,130 @@
+FROM php:8.3-fpm-alpine AS build
+
+# Install system dependencies for Alpine
+RUN apk add --no-cache \
+    bash \
+    git \
+    unzip \
+    curl \
+    autoconf
+RUN apk add --no-cache \
+    icu-dev \
+    libxml2-dev \
+    libzip-dev \
+    oniguruma-dev \
+    postgresql-dev 
+    #zip \
+    # autoconf \
+    # build-base \
+    # linux-headers
+
+# Install PHP extensions required for Laravel 10
+RUN docker-php-ext-install \
+    pdo \
+    pdo_pgsql \
+    # pgsql \
+    mbstring \
+    zip \
+    # pcntl \
+    intl \
+    xml 
+    # dom \
+    # fileinfo \
+    # tokenizer
+
+# Install and enable Xdebug for development
+# RUN pecl install xdebug && docker-php-ext-enable xdebug
+
+# Copy Composer from official image
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /app/weather_backend
+
+# Copy composer files
+COPY composer.json composer.lock* ./
+
+# Install PHP dependencies including dev dependencies for development
+RUN composer install --optimize-autoloader --no-scripts --no-interaction --no-progress
+
+COPY . .
+
+# FROM php:8.3-fpm-alpine AS php-fpm
+
+# Install runtime dependencies
+# RUN apk add --no-cache \
+#     bash \
+#     postgresql-libs \
+#     libzip \
+#     oniguruma \
+#     icu-libs \
+#     libxml2 \
+#     curl
+
+# Install PHP extensions (runtime only)
+# RUN apk add --no-cache --virtual .build-deps \
+#     postgresql-dev \
+#     libzip-dev \
+#     icu-dev \
+#     libxml2-dev \
+#     oniguruma-dev \
+#     autoconf \
+#     build-base \
+#     linux-headers \
+#     && docker-php-ext-install \
+#         pdo \
+#         pdo_pgsql \
+#         pgsql \
+#         mbstring \
+#         zip \
+#         pcntl \
+#         intl \
+#         xml \
+#         dom \
+#         fileinfo \
+#         tokenizer \
+#     && pecl install xdebug \
+#     && docker-php-ext-enable xdebug \
+#     && apk del .build-deps
+
+# Copy Composer for development use
+# COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Create non-root user
+# RUN addgroup -g 1000 -S www && adduser -u 1000 -S www -G www
+
+# Set working directory
+# WORKDIR /var/www/html
+
+# Copy application files
+# COPY --chown=www:www . .
+
+# Copy vendor from build stage
+# COPY --from=build --chown=www:www /var/www/vendor ./vendor
+
+# Copy and set entrypoint permissions
+COPY ./docker/entrypoint.dev.sh /entrypoint.dev.sh
+RUN chmod +x /entrypoint.dev.sh
+
+# Set proper permissions for Laravel
+# RUN chown -R www:www /var/www/html \
+#     && chmod -R 755 /var/www/html/storage \
+#     && chmod -R 755 /var/www/html/bootstrap/cache
+
+# Configure PHP-FPM to run as www user
+# RUN sed -i 's/user = nobody/user = www/g' /usr/local/etc/php-fpm.d/www.conf \
+#     && sed -i 's/group = nobody/group = www/g' /usr/local/etc/php-fpm.d/www.conf
+
+# Configure Xdebug for development
+# RUN echo "xdebug.mode=develop,debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+#     && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+#     && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+#     && echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+
+# Expose PHP-FPM port
+EXPOSE 8000
+
+# Switch to non-root user
+# USER www
+
+CMD ["/entrypoint.dev.sh"]

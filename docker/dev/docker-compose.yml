@@ -1,0 +1,52 @@
+services:
+  weather_database:
+    image: postgres:15-alpine
+    container_name: weather_database_dev
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: weather_dev
+      POSTGRES_USER: weather_dev
+      POSTGRES_PASSWORD: weather_dev
+    volumes:
+      - pg_database_data:/var/lib/postgresql/data
+
+  weather_backend:
+    build:
+      context: ../../backend
+      dockerfile: docker/Dockerfile.dev
+    container_name: weather_backend_dev
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: weather_database_dev
+      DB_PORT: 5432
+      DB_DATABASE: weather_dev
+      DB_USERNAME: weather_dev
+      DB_PASSWORD: weather_dev
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+    # volumes:
+    #   - ../../backend:/app/weather_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - weather_database
+
+  weather_frontend:
+    build:
+      context: ../../frontend
+      dockerfile: docker/Dockerfile.dev
+    container_name: weather_frontend_dev
+    ports:
+      - "5137:5137"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/weather
+    # volumes:
+    #   - ../../frontend:/app/weather_frontend
+    depends_on:
+      - weather_backend
+
+volumes:
+  pg_database_data:
+    driver: local

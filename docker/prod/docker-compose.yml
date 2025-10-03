@@ -1,12 +1,8 @@
-version: "3.9"
-
 services:
   weather_database:
     image: postgres:15-alpine
     container_name: weather_database
     restart: unless-stopped
-    # ports:
-    #   - "5432:5432"
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}
@@ -16,15 +12,15 @@ services:
     networks:
       - weather-database-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U weather -d weather"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
       interval: 5s
       timeout: 3s
       retries: 20
 
   weather_backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ../../backend
+      dockerfile: docker/Dockerfile.prod
     container_name: weather_backend
     environment:
       DB_CONNECTION: pgsql
@@ -36,29 +32,23 @@ services:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:9000
-    # volumes:
-    #   - ./backend:/app/weather_backend
     networks:
       - weather-database-network
       - weather-app-network
       - weather-host-network
-    # ports:
-    #   - "9000:9000"
     depends_on:
       weather_database:
         condition: service_healthy
 
   weather_frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: ../../frontend
+      dockerfile: docker/Dockerfile.prod
     container_name: weather_frontend
     ports:
       - "80:80"
     environment:
       VITE_API_BASE_URL: /api
-    # volumes:
-    #   - ./frontend:/app/weather_frontend
     networks:
       - weather-app-network
       - weather-host-network

@@ -6,9 +6,7 @@ import { Line, LineChart, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContai
 // import DatePicker from 'react-datepicker';
 // import 'react-datepicker/dist/react-datepicker.css';
 
-import './App.css';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/weather'
 
 type Weather = {
   id: number
@@ -110,7 +108,7 @@ export function App() {
     if (!lat || !lon) return;
     setLoading(prev => ({ ...prev, last: true }));
     try {
-      const response = await axios.get(`${API_BASE}/weather/last`, { 
+      const response = await axios.get(`${API_BASE}/last`, { 
         params: { lat, lon },
         signal: controller.signal
       });
@@ -125,7 +123,7 @@ export function App() {
     if (!lat || !lon) return;
     setLoading(prev => ({ ...prev, chart: true }));
     try {
-      const response = await axios.get(`${API_BASE}/weather/recent`, { 
+      const response = await axios.get(`${API_BASE}/recent`, { 
         params: { lat, lon },
         signal: controller.signal
       });
@@ -140,7 +138,7 @@ export function App() {
     if (!lat || !lon || !to || !from) return;
     setLoading(prev => ({ ...prev, chart: true }));
     try {
-      const response = await axios.get(`${API_BASE}/weather/range`, {
+      const response = await axios.get(`${API_BASE}/range`, {
         params: { from, to, lat, lon },
         signal: controller.signal
       });
@@ -192,109 +190,306 @@ export function App() {
 
   // const triggerFetch = async () => {
   //   try {
-  //       axios.get(`${API_BASE}/weather/last`, { params: { lat, lon }}).then(r => setLastData(r.data)).catch(() => {})
+  //       axios.get(`${API_BASE}/last`, { params: { lat, lon }}).then(r => setLastData(r.data)).catch(() => {})
   //   } catch { }
   // }
   // const triggerLoadRecent = async () => {
   //   try {
-  //       axios.get(`${API_BASE}/weather/recent`, { params: { lat, lon }}).then(r => setRecentData(r.data)).catch(() => {})
+  //       axios.get(`${API_BASE}/recent`, { params: { lat, lon }}).then(r => setRecentData(r.data)).catch(() => {})
   //   } catch {  }
   // }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: '100%', maxWidth: 800, padding: 16, fontFamily: 'system-ui, Arial' }}>
-      <h2>Weather</h2>
+    <div className="animate-fade-in flex flex-col w-full max-w-4xl gap-4 sm:gap-6">
+      {/* Compact Header */}
+      <div className="weather-card p-4 sm:p-6 text-center bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0">
+        <h1 className="text-2xl sm:text-3xl font-bold m-0 text-white">
+          🌤️ Weather Dashboard
+        </h1>
+        <p className="text-sm sm:text-base opacity-90 mt-1 sm:mt-2 text-white">
+          Historical weather data and trends
+        </p>
+      </div>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-        <label>
-          Lat: <input className='coordinate-input' type="number" min={-90} max={90} step="0.0001" value={draftLat}
-            data-state={draftLat == '' ? 'error' : parseFloat(draftLat) !== parseFloat(lat)? "changed" : "success"}
-            onInput={handleLatInput} onKeyDown={handleEnterKeyDown} onBlur={handleBlur} style={{ width: 120 }}
-          />
-        </label>
-        <label>
-          Lon: <input className='coordinate-input' type="number" min={-180} max={180} step="0.0001" value={draftLon}
-            data-state={draftLon == '' ? 'error' : parseFloat(draftLon) !== parseFloat(lon) ? "changed" : "success"}
-            onInput={handleLonInput} onKeyDown={handleEnterKeyDown} onBlur={handleBlur} style={{ width: 120 }} />
-        </label>
-        {/* <button onClick={triggerFetch}>Fetch now</button> */}
+      {/* Compact Location Input */}
+      <div className="weather-card p-4">
+        <h3 className="text-lg font-semibold mb-3 text-gray-900">📍 Location</h3>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Latitude
+            </label>
+            <input 
+              className="form-input"
+              type="number" 
+              min={-90} 
+              max={90} 
+              step="0.0001" 
+              value={draftLat}
+              data-state={draftLat == '' ? 'error' : parseFloat(draftLat) !== parseFloat(lat) ? "changed" : "success"}
+              onInput={handleLatInput} 
+              onKeyDown={handleEnterKeyDown} 
+              onBlur={handleBlur}
+              placeholder="Enter latitude..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Longitude
+            </label>
+            <input 
+              className="form-input"
+              type="number" 
+              min={-180} 
+              max={180} 
+              step="0.0001" 
+              value={draftLon}
+              data-state={draftLon == '' ? 'error' : parseFloat(draftLon) !== parseFloat(lon) ? "changed" : "success"}
+              onInput={handleLonInput} 
+              onKeyDown={handleEnterKeyDown} 
+              onBlur={handleBlur}
+              placeholder="Enter longitude..."
+            />
+          </div>
+        </div>
+        
         {lastData && !loading.last && (
-          <span>Rounded to the closest: {lastData.lat} {lastData.lon} (API limits)</span>  
+          <div className="p-2 bg-blue-50 rounded-lg text-sm text-gray-600">
+            📍 Rounded to: {lastData.lat}, {lastData.lon} (API limits)
+          </div>
         )}
       </div>
+
+      {/* Compact Weather Cards */}
       {lastData && !loading.last ? (
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
-          <div><strong>Observed:</strong> {new Date(lastData.observed_at).toLocaleString()}</div>
-          <div><strong>Temp:</strong> {lastData.temperature_c ?? '—'} °C</div>
-          <div><strong>Wind:</strong> {lastData.wind_speed_ms ? Math.round(lastData.wind_speed_ms*100) / 100 : '—'} m/s</div>
-          <div><strong>Pressure:</strong> {lastData.pressure_hpa ?? '—'} hPa</div>
-          <div><strong>Humidity:</strong> {lastData.humidity_pct ?? '—'} %</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="weather-metric-card bg-gradient-to-br from-amber-500 to-orange-600">
+            <div className="text-lg mb-1">🌡️</div>
+            <div className="text-xl font-bold">
+              {lastData.temperature_c ?? '—'}°C
+            </div>
+            <div className="text-xs opacity-90">Temperature</div>
+          </div>
+          
+          <div className="weather-metric-card bg-gradient-to-br from-emerald-500 to-green-600">
+            <div className="text-lg mb-1">💨</div>
+            <div className="text-xl font-bold">
+              {lastData.wind_speed_ms ? Math.round(lastData.wind_speed_ms*100) / 100 : '—'} m/s
+            </div>
+            <div className="text-xs opacity-90">Wind</div>
+          </div>
+          
+          <div className="weather-metric-card bg-gradient-to-br from-blue-500 to-blue-600">
+            <div className="text-lg mb-1">🔽</div>
+            <div className="text-xl font-bold">
+              {lastData.pressure_hpa ?? '—'} hPa
+            </div>
+            <div className="text-xs opacity-90">Pressure</div>
+          </div>
+          
+          <div className="weather-metric-card bg-gradient-to-br from-cyan-500 to-teal-600">
+            <div className="text-lg mb-1">💧</div>
+            <div className="text-xl font-bold">
+              {lastData.humidity_pct ?? '—'}%
+            </div>
+            <div className="text-xs opacity-90">Humidity</div>
+          </div>
         </div>
       ) : (
-        <div>Loading latset weather data... </div>
+        <div className="weather-card p-6 text-center animate-pulse-slow">
+          <div className="text-base text-gray-600">
+            ⏳ Loading weather data...
+          </div>
+        </div>
+      )}
+      
+      {lastData && !loading.last && (
+        <div className="weather-card p-3">
+          <div className="text-xs text-gray-600">
+            📅 Last observed: {new Date(lastData.observed_at).toLocaleString()}
+          </div>
+        </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8}}>
-        <input type="radio" checked={preferredChartData == "recent"} name='preferRecentData' id='preferRecentData' onChange={handlePreferredChange} radioGroup='preferredData'/>
-        <label htmlFor="preferRecentData">Recent</label>
+      {/* Compact Chart Controls */}
+      <div className="weather-card p-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">📊 Charts</h3>
         
-        <input type="radio" checked={preferredChartData == "range"}  name='preferRangeData' id='preferRangeData' onChange={handlePreferredChange} radioGroup='preferredData'/>
-        <label htmlFor="preferRangeData">Range</label>
-
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center'}}>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center'}}>
-            From: <input type="date" value={from} max={to || undefined}
-            onChange ={e => {
-              setFrom(e.target.value)
-              if (e.target.value && to) setPreferredChartData("range");
-            }} />
-          </label>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center'}}>
-            To: <input type="date" value={to} min={from || undefined}
-            onChange={e => {
-              setTo(e.target.value)
-              if (e.target.value && from) setPreferredChartData("range");
-            }} />
-          </label>
-        </div>
-      </div> 
-
-      <div style={{position: 'relative', maxHeight: 600, maxWidth: '100%',  display: 'flex', flexGrow: 1, flexDirection: 'column', border: '1px solid #1094c9', borderRadius: 8, overflow: 'hidden'}}>
-        <div style={{flexGrow: 1, padding: 8}}>
-
-          <ResponsiveContainer width="100%" height="100%">
-          
-            <LineChart data={chartData} width={6700} margin={{ top: 10, right: 20, bottom: 10, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" minTickGap={32} />
-              <YAxis yAxisId="left" orientation="left" label={{ value: 'm/s / °C', angle: -90, position: 'insideLeft' }} />
-              <YAxis yAxisId="right" orientation="right" color='#3498db' label={{ value: 'hPa / %', angle: 90, position: 'insideRight' }} />
-              {chartData && (preferredChartData == "range" || !loading.chart) && <>
-                <Tooltip />
-                <Line yAxisId="left" type="monotone" dataKey="temperature" stroke="#e74c3c" dot={false} name="Temperature" />
-                <Line yAxisId="right" type="monotone" dataKey="pressure" stroke="#035a94" dot={false} name="Pressure" />
-                <Line yAxisId="left" type="monotone" dataKey="wind" stroke="#2ecc71" dot={false} name="Wind" />
-                <Line yAxisId="right" type="monotone" dataKey="humidity" stroke="#FFC0CB" strokeWidth={2} dot={false} name="Humidity" />
-              </>}
-            </LineChart>
-            
-          </ResponsiveContainer>
-
-        </div>
-        {(loading.chart) ? (
-            <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            width: '100%', height: '100%', backgroundColor: "rgba(0,0,0,0.2)", backdropFilter: 'blur(1.2px)'}}>
-              Loading Chart Data ...
+        <div className="space-y-4">
+          {/* Radio Group */}
+          <div className="radio-group w-full sm:w-auto">
+            <div className="radio-option">
+              <input 
+                type="radio" 
+                checked={preferredChartData === "recent"} 
+                name='preferRecentData' 
+                id='preferRecentData' 
+                onChange={handlePreferredChange}
+              />
+              <label htmlFor="preferRecentData">📈 Recent</label>
             </div>
-        ) : preferredChartData == "range" && (!to || !from) && (
-          <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-          width: '100%', height: '100%', backgroundColor: "rgba(0,0,0,0.2)", backdropFilter: 'blur(1.2px)'}}>
-            Select correct Dates 'From' and 'To ' ...
+            
+            <div className="radio-option">
+              <input 
+                type="radio" 
+                checked={preferredChartData === "range"} 
+                name='preferRangeData' 
+                id='preferRangeData' 
+                onChange={handlePreferredChange}
+              />
+              <label htmlFor="preferRangeData">📅 Range</label>
+            </div>
+          </div>
+
+          {/* Date Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">From Date</label>
+              <input 
+                className="form-input w-full"
+                type="date" 
+                value={from} 
+                max={to || undefined}
+                onChange={e => {
+                  setFrom(e.target.value)
+                  if (e.target.value && to) setPreferredChartData("range");
+                }} 
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">To Date</label>
+              <input 
+                className="form-input w-full"
+                type="date" 
+                value={to} 
+                min={from || undefined}
+                onChange={e => {
+                  setTo(e.target.value)
+                  if (e.target.value && from) setPreferredChartData("range");
+                }} 
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Compact Chart Container */}
+      <div className="chart-container p-3">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart 
+            data={chartData} 
+            margin={{ top: 10, right: 15, bottom: 10, left: 15 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis 
+              dataKey="time" 
+              minTickGap={30}
+              fontSize={10}
+              stroke="#64748b"
+            />
+            <YAxis 
+              yAxisId="left" 
+              orientation="left" 
+              fontSize={10}
+              stroke="#64748b"
+              label={{ 
+                value: 'm/s / °C', 
+                angle: -90, 
+                position: 'insideLeft',
+                style: { textAnchor: 'middle', fill: '#64748b', fontSize: '10px' }
+              }} 
+            />
+            <YAxis 
+              yAxisId="right" 
+              orientation="right" 
+              fontSize={10}
+              stroke="#64748b"
+              label={{ 
+                value: 'hPa / %', 
+                angle: 90, 
+                position: 'insideRight',
+                style: { textAnchor: 'middle', fill: '#64748b', fontSize: '10px' }
+              }} 
+            />
+            {chartData && (preferredChartData === "range" || !loading.chart) && (
+              <>
+                <Tooltip 
+                  contentStyle={{
+                    background: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    fontSize: '12px',
+                    color: '#1f2937'
+                  }}
+                  labelStyle={{
+                    color: '#1f2937',
+                    fontWeight: '500'
+                  }}
+                />
+                <Line 
+                  yAxisId="left" 
+                  type="monotone" 
+                  dataKey="temperature" 
+                  stroke="#f59e0b" 
+                  strokeWidth={2}
+                  dot={false} 
+                  name="Temperature (°C)" 
+                />
+                <Line 
+                  yAxisId="right" 
+                  type="monotone" 
+                  dataKey="pressure" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  dot={false} 
+                  name="Pressure (hPa)" 
+                />
+                <Line 
+                  yAxisId="left" 
+                  type="monotone" 
+                  dataKey="wind" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  dot={false} 
+                  name="Wind (m/s)" 
+                />
+                <Line 
+                  yAxisId="right" 
+                  type="monotone" 
+                  dataKey="humidity" 
+                  stroke="#06b6d4" 
+                  strokeWidth={2}
+                  dot={false} 
+                  name="Humidity (%)" 
+                />
+              </>
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+
+        {loading.chart && (
+          <div className="loading-overlay animate-fade-in">
+            <div className="text-center">
+              <div className="text-xl mb-1">⏳</div>
+              <div className="text-sm">Loading chart...</div>
+            </div>
+          </div>
+        )}
+        
+        {preferredChartData === "range" && (!to || !from) && !loading.chart && (
+          <div className="loading-overlay">
+            <div className="text-center">
+              <div className="text-xl mb-1">📅</div>
+              <div className="text-sm">Select date range</div>
+            </div>
           </div>
         )}
       </div>
     </div>
   )
-} 
+}
 
 export default App;
