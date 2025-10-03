@@ -187,6 +187,10 @@
     background: #334155;
     border-color: #475569;
   }
+  .weather-card h1,
+  .weather-card p {
+    color: var(--white) !important;
+  }
 
   .form-input {
     background: #334155;

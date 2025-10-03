@@ -1,0 +1,69 @@
+/* Language Switcher Styles - High specificity for header */
+.weather-card .language-switcher-header {
+  min-width: 120px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.weather-card .language-switcher-header span {
+  color: black;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.weather-card .language-switcher-header button {
+  color: black;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.weather-card .language-switcher-header button:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  color: black;
+  transform: translateY(-1px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Active language button - highest specificity */
+.weather-card .language-switcher-header .flex button.bg-blue-600 {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #1d4ed8 !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: none;
+}
+
+.weather-card .language-switcher-header .flex button.bg-blue-600:hover {
+  background: rgba(255, 255, 255, 1) !important;
+  color: #1d4ed8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  text-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .language-switcher-header {
+    min-width: 80px;
+  }
+  
+  .language-switcher-header span {
+    display: none;
+  }
+  
+  .language-switcher-header .flex {
+    gap: 0.25rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .weather-card .language-switcher-header span {
+    color: var(--white); 
+  }
+  .weather-card .language-switcher-header button {
+    color: var(--white); 
+  }
+}

@@ -1,6 +1,8 @@
 import React, { FormEvent, useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { Line, LineChart, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from './components/LanguageSwitcher'
 
 // Too complex already for test task
 // import DatePicker from 'react-datepicker';
@@ -36,6 +38,8 @@ function formatDate(date: Date) {
 }
 
 export function App() {
+  const { t } = useTranslation();
+  
   const [lat, setLat] = useState<string>('54.9044')
   const [lon, setLon] = useState<string>('52.3154')
   const [draftLat, setDraftLat] = useState<string>(lat);
@@ -199,6 +203,8 @@ export function App() {
         const locationName = result.display_name.split(',').slice(0, 2).join(', ');
         setCitySearch(locationName);
       } else {
+        // We'll show alert messages in English for now since they're used immediately
+        // In a real app, we'd use a proper notification system
         alert('City not found. Please try a different search term.');
       }
     } catch (error) {
@@ -315,17 +321,25 @@ export function App() {
     <div className="animate-fade-in flex flex-col w-full max-w-4xl gap-4 sm:gap-6">
       {/* Compact Header */}
       <div className="weather-card p-4 sm:p-6 text-center bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0">
-        <h1 className="text-2xl sm:text-3xl font-bold m-0 text-white">
-          🌤️ Weather Dashboard
-        </h1>
-        <p className="text-sm sm:text-base opacity-90 mt-1 sm:mt-2 text-white">
-          Historical weather data and trends
-        </p>
+        <div className="flex justify-between items-start mb-4">
+          <div></div>
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold m-0 text-black">
+              🌤️ {t('header.title')}
+            </h1>
+            <p className="text-sm sm:text-base opacity-90 mt-1 sm:mt-2 text-black">
+              {t('header.subtitle')}
+            </p>
+          </div>
+          <div className="language-switcher-header">
+            <LanguageSwitcher />
+          </div>
+        </div>
       </div>
 
       {/* Compact Location Input */}
       <div className="weather-card p-4">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">📍 Location</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">📍 {t('location.title')}</h3>
         
         {/* City Search */}
         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
@@ -337,7 +351,7 @@ export function App() {
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
                 onKeyDown={handleCitySearchKeyDown}
-                placeholder="Search for a city (e.g., Moscow, London, New York)..."
+                placeholder={t('location.citySearchPlaceholder')}
                 disabled={isSearching}
               />
             </div>
@@ -346,35 +360,35 @@ export function App() {
               onClick={handleCitySearch}
               disabled={isSearching || !citySearch.trim()}
             >
-              {isSearching ? '⏳ Searching...' : '🔍 Search'}
+              {isSearching ? `⏳ ${t('common.searching')}` : `🔍 ${t('location.searchButton')}`}
             </button>
             <button
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               onClick={handleGetCurrentLocation}
               disabled={geoLocationStatus === 'loading'}
             >
-              {geoLocationStatus === 'loading' ? '⏳ Locating...' : 
-               geoLocationStatus === 'success' ? '✓ Located!' :
-               geoLocationStatus === 'error' ? '⚠ Error' : '📍 My Location'}
+              {geoLocationStatus === 'loading' ? `⏳ ${t('common.locating')}` : 
+               geoLocationStatus === 'success' ? `✓ ${t('common.located')}` :
+               geoLocationStatus === 'error' ? `⚠ ${t('common.error')}` : `📍 ${t('location.myLocationButton')}`}
             </button>
           </div>
           
           {geoLocationStatus === 'error' && (
             <p className="text-sm text-red-600 mt-2">
-              ⚠ Unable to get your location. Please check your browser permissions or enter coordinates manually.
+              ⚠ {t('location.geolocationError')}
             </p>
           )}
         </div>
         
         {/* Manual Coordinates */}
         <div className="mb-3">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Or enter coordinates manually:</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">{t('location.coordinatesManual')}</h4>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
-              Latitude
+              {t('location.latitude')}
             </label>
             <input 
               className="form-input"
@@ -387,12 +401,12 @@ export function App() {
               onInput={handleLatInput} 
               onKeyDown={handleEnterKeyDown} 
               onBlur={handleBlur}
-              placeholder="Enter latitude..."
+              placeholder={t('location.latitudePlaceholder')}
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">
-              Longitude
+              {t('location.longitude')}
             </label>
             <input 
               className="form-input"
@@ -405,14 +419,14 @@ export function App() {
               onInput={handleLonInput} 
               onKeyDown={handleEnterKeyDown} 
               onBlur={handleBlur}
-              placeholder="Enter longitude..."
+              placeholder={t('location.longitudePlaceholder')}
             />
           </div>
         </div>
         
         {lastData && !loading.last && (
           <div className="p-2 bg-blue-50 rounded-lg text-sm text-gray-600">
-            📍 Rounded to: {lastData.lat}, {lastData.lon} (API limits)
+            📍 {t('location.roundedTo')} {lastData.lat}, {lastData.lon} {t('location.apiLimits')}
           </div>
         )}
       </div>
@@ -423,39 +437,39 @@ export function App() {
           <div className="weather-metric-card bg-gradient-to-br from-amber-500 to-orange-600">
             <div className="text-lg mb-1">🌡️</div>
             <div className="text-xl font-bold">
-              {lastData.temperature_c ?? '—'}°C
+              {lastData.temperature_c ?? '—'}{t('charts.temperatureUnit')}
             </div>
-            <div className="text-xs opacity-90">Temperature</div>
+            <div className="text-xs opacity-90">{t('weather.temperature')}</div>
           </div>
           
           <div className="weather-metric-card bg-gradient-to-br from-emerald-500 to-green-600">
             <div className="text-lg mb-1">💨</div>
             <div className="text-xl font-bold">
-              {lastData.wind_speed_ms ? Math.round(lastData.wind_speed_ms*100) / 100 : '—'} m/s
+              {lastData.wind_speed_ms ? Math.round(lastData.wind_speed_ms*100) / 100 : '—'} {t('charts.windUnit')}
             </div>
-            <div className="text-xs opacity-90">Wind</div>
+            <div className="text-xs opacity-90">{t('weather.wind')}</div>
           </div>
           
           <div className="weather-metric-card bg-gradient-to-br from-blue-500 to-blue-600">
             <div className="text-lg mb-1">🔽</div>
             <div className="text-xl font-bold">
-              {lastData.pressure_hpa ?? '—'} hPa
+              {lastData.pressure_hpa ?? '—'} {t('charts.pressureUnit')}
             </div>
-            <div className="text-xs opacity-90">Pressure</div>
+            <div className="text-xs opacity-90">{t('weather.pressure')}</div>
           </div>
           
           <div className="weather-metric-card bg-gradient-to-br from-cyan-500 to-teal-600">
             <div className="text-lg mb-1">💧</div>
             <div className="text-xl font-bold">
-              {lastData.humidity_pct ?? '—'}%
+              {lastData.humidity_pct ?? '—'}{t('charts.humidityUnit')}
             </div>
-            <div className="text-xs opacity-90">Humidity</div>
+            <div className="text-xs opacity-90">{t('weather.humidity')}</div>
           </div>
         </div>
       ) : (
         <div className="weather-card p-6 text-center animate-pulse-slow">
           <div className="text-base text-gray-600">
-            ⏳ Loading weather data...
+            ⏳ {t('weather.loadingWeatherData')}
           </div>
         </div>
       )}
@@ -463,14 +477,14 @@ export function App() {
       {lastData && !loading.last && (
         <div className="weather-card p-3">
           <div className="text-xs text-gray-600">
-            📅 Last observed: {new Date(lastData.observed_at).toLocaleString()}
+            📅 {t('weather.lastObserved')} {new Date(lastData.observed_at).toLocaleString()}
           </div>
         </div>
       )}
 
       {/* Compact Chart Controls */}
       <div className="weather-card p-4">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">📊 Charts</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">📊 {t('charts.title')}</h3>
         
         <div className="space-y-4">
           {/* Radio Group */}
@@ -483,7 +497,7 @@ export function App() {
                 id='preferRecentData' 
                 onChange={handlePreferredChange}
               />
-              <label htmlFor="preferRecentData">📈 Recent</label>
+              <label htmlFor="preferRecentData">📈 {t('charts.recent')}</label>
             </div>
             
             <div className="radio-option">
@@ -494,14 +508,14 @@ export function App() {
                 id='preferRangeData' 
                 onChange={handlePreferredChange}
               />
-              <label htmlFor="preferRangeData">📅 Range</label>
+              <label htmlFor="preferRangeData">📅 {t('charts.range')}</label>
             </div>
           </div>
 
           {/* Date Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">From Date</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">{t('charts.fromDate')}</label>
               <input 
                 className="form-input w-full"
                 type="date" 
@@ -515,7 +529,7 @@ export function App() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">To Date</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">{t('charts.toDate')}</label>
               <input 
                 className="form-input w-full"
                 type="date" 
@@ -551,7 +565,7 @@ export function App() {
               fontSize={10}
               stroke="#64748b"
               label={{ 
-                value: 'm/s / °C', 
+                value: t('charts.leftAxisLabel'), 
                 angle: -90, 
                 position: 'insideLeft',
                 style: { textAnchor: 'middle', fill: '#64748b', fontSize: '10px' }
@@ -563,11 +577,11 @@ export function App() {
               fontSize={10}
               stroke="#64748b"
               label={{ 
-                value: 'hPa / %', 
+                value: t('charts.rightAxisLabel'), 
                 angle: 90, 
                 position: 'insideRight',
                 style: { textAnchor: 'middle', fill: '#64748b', fontSize: '10px' }
-              }} 
+              }}
             />
             {chartData && (preferredChartData === "range" || !loading.chart) && (
               <>
@@ -592,7 +606,7 @@ export function App() {
                   stroke="#f59e0b" 
                   strokeWidth={2}
                   dot={false} 
-                  name="Temperature (°C)" 
+                  name={`${t('weather.temperature')} (${t('charts.temperatureUnit')})`} 
                 />
                 <Line 
                   yAxisId="right" 
@@ -601,7 +615,7 @@ export function App() {
                   stroke="#3b82f6" 
                   strokeWidth={2}
                   dot={false} 
-                  name="Pressure (hPa)" 
+                  name={`${t('weather.pressure')} (${t('charts.pressureUnit')})`} 
                 />
                 <Line 
                   yAxisId="left" 
@@ -610,7 +624,7 @@ export function App() {
                   stroke="#10b981" 
                   strokeWidth={2}
                   dot={false} 
-                  name="Wind (m/s)" 
+                  name={`${t('weather.wind')} (${t('charts.windUnit')})`} 
                 />
                 <Line 
                   yAxisId="right" 
@@ -619,7 +633,7 @@ export function App() {
                   stroke="#06b6d4" 
                   strokeWidth={2}
                   dot={false} 
-                  name="Humidity (%)" 
+                  name={`${t('weather.humidity')} (${t('charts.humidityUnit')})`} 
                 />
               </>
             )}
@@ -630,7 +644,7 @@ export function App() {
           <div className="loading-overlay animate-fade-in">
             <div className="text-center">
               <div className="text-xl mb-1">⏳</div>
-              <div className="text-sm">Loading chart...</div>
+              <div className="text-sm">{t('charts.loadingChart')}</div>
             </div>
           </div>
         )}
@@ -639,7 +653,7 @@ export function App() {
           <div className="loading-overlay">
             <div className="text-center">
               <div className="text-xl mb-1">📅</div>
-              <div className="text-sm">Select date range</div>
+              <div className="text-sm">{t('charts.selectDateRange')}</div>
             </div>
           </div>
         )}

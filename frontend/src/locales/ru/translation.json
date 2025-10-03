@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "search": "Поиск",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "located": "Найдено!",
+    "locating": "Определение...",
+    "searching": "Поиск..."
+  },
+  "header": {
+    "title": "Панель погоды",
+    "subtitle": "Исторические данные о погоде и тренды"
+  },
+  "location": {
+    "title": "Местоположение",
+    "citySearchPlaceholder": "Поиск города (например, Москва, Лондон, Нью-Йорк)...",
+    "coordinatesManual": "Или введите координаты вручную:",
+    "latitude": "Широта",
+    "longitude": "Долгота",
+    "latitudePlaceholder": "Введите широту...",
+    "longitudePlaceholder": "Введите долготу...",
+    "myLocationButton": "Моё местоположение",
+    "roundedTo": "Округлено до:",
+    "apiLimits": "(ограничения API)",
+    "searchButton": "Найти",
+    "geolocationError": "Невозможно получить ваше местоположение. Проверьте разрешения браузера или введите координаты вручную.",
+    "cityNotFound": "Город не найден. Попробуйте другой поисковый запрос.",
+    "citySearchError": "Ошибка поиска города. Попробуйте снова."
+  },
+  "weather": {
+    "temperature": "Температура",
+    "wind": "Ветер",
+    "pressure": "Давление",
+    "humidity": "Влажность",
+    "lastObserved": "Последнее наблюдение:",
+    "loadingWeatherData": "Загрузка данных о погоде..."
+  },
+  "charts": {
+    "title": "Графики",
+    "recent": "Недавние",
+    "range": "Диапазон",
+    "fromDate": "С даты",
+    "toDate": "До даты",
+    "loadingChart": "Загрузка графика...",
+    "selectDateRange": "Выберите диапазон дат",
+    "temperatureUnit": "°C",
+    "windUnit": "м/с",
+    "pressureUnit": "гПа",
+    "humidityUnit": "%",
+    "leftAxisLabel": "м/с / °C",
+    "rightAxisLabel": "гПа / %"
+  },
+  "language": {
+    "english": "English",
+    "russian": "Русский",
+    "switchLanguage": "Язык"
+  }
+}

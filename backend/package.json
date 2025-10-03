@@ -8,5 +8,10 @@
         "axios": "^1.1.2",
         "laravel-vite-plugin": "^0.7.2",
         "vite": "^4.0.0"
+    },
+    "dependencies": {
+        "i18next": "^25.5.3",
+        "i18next-browser-languagedetector": "^8.2.0",
+        "react-i18next": "^16.0.0"
     }
 }

@@ -1,0 +1,59 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "search": "Search",
+    "error": "Error",
+    "success": "Success",
+    "located": "Located!",
+    "locating": "Locating...",
+    "searching": "Searching..."
+  },
+  "header": {
+    "title": "Weather Dashboard",
+    "subtitle": "Historical weather data and trends"
+  },
+  "location": {
+    "title": "Location",
+    "citySearchPlaceholder": "Search for a city (e.g., Moscow, London, New York)...",
+    "coordinatesManual": "Or enter coordinates manually:",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "latitudePlaceholder": "Enter latitude...",
+    "longitudePlaceholder": "Enter longitude...",
+    "myLocationButton": "My Location",
+    "roundedTo": "Rounded to:",
+    "apiLimits": "(API limits)",
+    "searchButton": "Search",
+    "geolocationError": "Unable to get your location. Please check your browser permissions or enter coordinates manually.",
+    "cityNotFound": "City not found. Please try a different search term.",
+    "citySearchError": "Error searching for city. Please try again."
+  },
+  "weather": {
+    "temperature": "Temperature",
+    "wind": "Wind",
+    "pressure": "Pressure",
+    "humidity": "Humidity",
+    "lastObserved": "Last observed:",
+    "loadingWeatherData": "Loading weather data..."
+  },
+  "charts": {
+    "title": "Charts",
+    "recent": "Recent",
+    "range": "Range",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "loadingChart": "Loading chart...",
+    "selectDateRange": "Select date range",
+    "temperatureUnit": "°C",
+    "windUnit": "m/s",
+    "pressureUnit": "hPa",
+    "humidityUnit": "%",
+    "leftAxisLabel": "m/s / °C",
+    "rightAxisLabel": "hPa / %"
+  },
+  "language": {
+    "english": "English",
+    "russian": "Русский",
+    "switchLanguage": "Language"
+  }
+}
