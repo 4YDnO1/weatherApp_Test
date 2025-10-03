@@ -40,6 +40,9 @@ export function App() {
   const [lon, setLon] = useState<string>('52.3154')
   const [draftLat, setDraftLat] = useState<string>(lat);
   const [draftLon, setDraftLon] = useState<string>(lon);
+  const [citySearch, setCitySearch] = useState<string>('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [geoLocationStatus, setGeoLocationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   const [errors, setErrors] = useState<DataErrors>({});
 
@@ -102,6 +105,115 @@ export function App() {
       setPreferredChartData("range");
     }
   }
+
+  // Reverse geocoding to get location name from coordinates
+  const reverseGeocode = async (lat: string, lon: string) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.display_name) {
+        // Extract city and country from the result
+        const address = data.address || {};
+        const city = address.city || address.town || address.village || address.municipality || address.county;
+        const country = address.country;
+        
+        if (city && country) {
+          setCitySearch(`${city}, ${country}`);
+        } else if (country) {
+          // If no city, use the first part of display_name with country
+          const locationPart = data.display_name.split(',')[0];
+          setCitySearch(`${locationPart}, ${country}`);
+        } else {
+          // Fallback to first two parts of display_name
+          const locationName = data.display_name.split(',').slice(0, 2).join(', ');
+          setCitySearch(locationName);
+        }
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      // Don't show error to user for reverse geocoding, just keep the search field as is
+    }
+  };
+
+  // Geolocation functionality
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoLocationStatus('error');
+      return;
+    }
+
+    setGeoLocationStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const newLat = position.coords.latitude.toFixed(4);
+        const newLon = position.coords.longitude.toFixed(4);
+        setLat(newLat);
+        setLon(newLon);
+        setDraftLat(newLat);
+        setDraftLon(newLon);
+        setGeoLocationStatus('success');
+        
+        // Update city search field with location name
+        await reverseGeocode(newLat, newLon);
+        
+        setTimeout(() => setGeoLocationStatus('idle'), 3000);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setGeoLocationStatus('error');
+        setTimeout(() => setGeoLocationStatus('idle'), 3000);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  };
+
+  // City search functionality using OpenStreetMap Nominatim API
+  const handleCitySearch = async () => {
+    if (!citySearch.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(citySearch)}&limit=1&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        const newLat = parseFloat(result.lat).toFixed(4);
+        const newLon = parseFloat(result.lon).toFixed(4);
+        
+        setLat(newLat);
+        setLon(newLon);
+        setDraftLat(newLat);
+        setDraftLon(newLon);
+        
+        // Update search field with found location name
+        const locationName = result.display_name.split(',').slice(0, 2).join(', ');
+        setCitySearch(locationName);
+      } else {
+        alert('City not found. Please try a different search term.');
+      }
+    } catch (error) {
+      console.error('City search error:', error);
+      alert('Error searching for city. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleCitySearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleCitySearch();
+    }
+  };
 
 
   const loadLast = async (controller: AbortController) => {
@@ -213,7 +325,51 @@ export function App() {
 
       {/* Compact Location Input */}
       <div className="weather-card p-4">
-        <h3 className="text-lg font-semibold mb-3 text-gray-900">📍 Location</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">📍 Location</h3>
+        
+        {/* City Search */}
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1">
+              <input
+                className="form-input w-full"
+                type="text"
+                value={citySearch}
+                onChange={(e) => setCitySearch(e.target.value)}
+                onKeyDown={handleCitySearchKeyDown}
+                placeholder="Search for a city (e.g., Moscow, London, New York)..."
+                disabled={isSearching}
+              />
+            </div>
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={handleCitySearch}
+              disabled={isSearching || !citySearch.trim()}
+            >
+              {isSearching ? '⏳ Searching...' : '🔍 Search'}
+            </button>
+            <button
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={handleGetCurrentLocation}
+              disabled={geoLocationStatus === 'loading'}
+            >
+              {geoLocationStatus === 'loading' ? '⏳ Locating...' : 
+               geoLocationStatus === 'success' ? '✓ Located!' :
+               geoLocationStatus === 'error' ? '⚠ Error' : '📍 My Location'}
+            </button>
+          </div>
+          
+          {geoLocationStatus === 'error' && (
+            <p className="text-sm text-red-600 mt-2">
+              ⚠ Unable to get your location. Please check your browser permissions or enter coordinates manually.
+            </p>
+          )}
+        </div>
+        
+        {/* Manual Coordinates */}
+        <div className="mb-3">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Or enter coordinates manually:</h4>
+        </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div>

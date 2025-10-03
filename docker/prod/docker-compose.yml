@@ -24,14 +24,14 @@ services:
     container_name: weather_backend
     environment:
       DB_CONNECTION: pgsql
-      DB_HOST: weather_database
+      DB_HOST: ${DB_HOST}
       DB_PORT: 5432
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_URL: http://localhost:9000
+      # APP_ENV: local
+      # APP_DEBUG: "true"
+      # APP_URL: http://localhost:9000
     networks:
       - weather-database-network
       - weather-app-network

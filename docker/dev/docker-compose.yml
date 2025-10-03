@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: weather_dev
     volumes:
       - pg_database_data:/var/lib/postgresql/data
-
+      
   weather_backend:
     build:
       context: ../../backend
